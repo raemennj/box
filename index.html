@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Parametric Wood Box Plan Generator</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --ink: #24211d;
+    --muted: #6c655c;
+    --accent: #8b5a2b;
+    --accent-light: #efe5d8;
+    --border: #dfd9ce;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  header {
+    background: #2b241d;
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+  header button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  header button:hover { opacity: 0.9; }
+  .layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 18px;
+    padding: 18px;
+    max-width: 1480px;
+    margin: 0 auto;
+  }
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  h2 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .section-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 14px 0 6px;
+    font-weight: 700;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  input[type="number"], select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: #fff;
+  }
+  input:disabled { background: #f2efe9; color: #9c9489; }
+  .toggle-group {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .toggle-group button {
+    flex: 1;
+    border: none;
+    background: #fff;
+    padding: 7px 6px;
+    font-size: 0.84rem;
+    cursor: pointer;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .toggle-group button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .sub-box {
+    background: #faf8f4;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .stat {
+    background: var(--accent-light);
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+  .stat small { display: block; color: var(--muted); font-size: 0.77rem; }
+  .stat strong { font-size: 0.98rem; }
+  .views {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 1180px) {
+    .views { grid-template-columns: 1fr; }
+  }
+  .svg-wrap {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fcfbf8;
+    overflow: hidden;
+  }
+  svg { display: block; width: 100%; height: auto; }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .slider-row input { flex: 1; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    background: #f5f2eb;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .warning {
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffecb5;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    margin-top: 10px;
+    display: none;
+  }
+  @media print {
+    header button, .controls-panel, .slider-row { display: none !important; }
+    .layout { grid-template-columns: 1fr; padding: 0; }
+    body { background: #fff; }
+    .panel { border: none; padding: 8px 0; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Parametric Wood Box Plan Generator</h1>
+  <button onclick="window.print()">Print / Save PDF</button>
+</header>
+
+<div class="layout">
+  <!-- CONTROLS -->
+  <div class="panel controls-panel">
+    <h2>Box Specifications</h2>
+
+    <div class="section-label">Units &amp; Reference</div>
+    <div class="toggle-group" id="unitGroup">
+      <button class="active" data-val="in">Inches (in)</button>
+      <button data-val="mm">Millimeters (mm)</button>
+    </div>
+    <div class="toggle-group" id="dimModeGroup">
+      <button class="active" data-val="outer">Outer Dimensions</button>
+      <button data-val="inner">Inner Dimensions</button>
+    </div>
+
+    <div class="section-label">Box Dimensions</div>
+    <div class="row-3">
+      <div>
+        <label>Width (<span class="u">in</span>)</label>
+        <input type="number" id="width" value="10" step="0.125" min="0.5" />
+      </div>
+      <div>
+        <label>Depth (<span class="u">in</span>)</label>
+        <input type="number" id="depth" value="7" step="0.125" min="0.5" />
+      </div>
+      <div>
+        <label>Height (<span class="u">in</span>)</label>
+        <input type="number" id="height" value="4" step="0.125" min="0.5" />
+      </div>
+    </div>
+
+    <div class="section-label">Material Thicknesses</div>
+    <div class="row-3">
+      <div>
+        <label>Walls (<span class="u">in</span>)</label>
+        <input type="number" id="tWall" value="0.5" step="0.0625" min="0.05" />
+      </div>
+      <div>
+        <label>Bottom (<span class="u">in</span>)</label>
+        <input type="number" id="tBottom" value="0.25" step="0.0625" min="0.05" />
+      </div>
+      <div>
+        <label>Lid (<span class="u">in</span>)</label>
+        <input type="number" id="tLid" value="0.25" step="0.0625" min="0.05" />
+      </div>
+    </div>
+
+    <div class="section-label">Corner &amp; Bottom Joinery</div>
+    <div style="margin-bottom: 10px;">
+      <label>Corner Joint</label>
+      <select id="cornerJoint">
+        <option value="butt">Butt Joint (Front/Back overlap Sides)</option>
+        <option value="miter">45° Miter Joint</option>
+        <option value="rabbet">Rabbet Joint (Sides into Front/Back)</option>
+      </select>
+    </div>
+
+    <div id="rabbetOpts" class="sub-box" style="display:none;">
+      <label>Rabbet Depth into Front/Back (<span class="u">in</span>)</label>
+      <input type="number" id="rabbetDepth" value="0.25" step="0.0625" min="0.05" />
+    </div>
+
+    <div style="margin-bottom: 10px;">
+      <label>Bottom Style</label>
+      <select id="bottomStyle">
+        <option value="groove">Dado / Groove (Captive in walls)</option>
+        <option value="under">Sits Under Walls (Full footprint)</option>
+        <option value="inside">Flush Inside Walls</option>
+      </select>
+    </div>
+
+    <div id="grooveOpts" class="sub-box row">
+      <div>
+        <label>Groove Depth (<span class="u">in</span>)</label>
+        <input type="number" id="grooveDepth" value="0.25" step="0.0625" min="0.05" />
+      </div>
+      <div>
+        <label>Bottom Skirt (<span class="u">in</span>)</label>
+        <input type="number" id="grooveOffset" value="0.25" step="0.0625" min="0" />
+      </div>
+    </div>
+
+    <div class="section-label">Top / Lid Style</div>
+    <div style="margin-bottom: 10px;">
+      <select id="topStyle">
+        <option value="sliding">Sliding Lid (Grooved, pull-out front)</option>
+        <option value="open">Open Top (5-sided)</option>
+        <option value="flat">Flat Lid On Top (6-sided / Hinged)</option>
+        <option value="inset">Inset Lid (Flush inside walls)</option>
+        <option value="lipped">Rabbeted Lip Lid (Self-centering plug)</option>
+        <option value="shoebox">Overlapping Shoebox Lid (5-sided cap)</option>
+      </select>
+    </div>
+
+    <div id="slidingOpts" class="sub-box row">
+      <div>
+        <label>Lid Groove Depth (<span class="u">in</span>)</label>
+        <input type="number" id="lidGrooveDepth" value="0.25" step="0.0625" min="0.05" />
+      </div>
+      <div>
+        <label>Top Rim Above Lid (<span class="u">in</span>)</label>
+        <input type="number" id="lidRim" value="0.25" step="0.0625" min="0.05" />
+      </div>
+    </div>
+
+    <div id="lippedOpts" class="sub-box" style="display:none;">
+      <label>Lower Lip / Plug Depth (<span class="u">in</span>)</label>
+      <input type="number" id="lipDepth" value="0.125" step="0.0625" min="0.05" />
+    </div>
+
+    <div id="shoeboxOpts" class="sub-box" style="display:none;">
+      <label>Lid Skirt Wall Height (<span class="u">in</span>)</label>
+      <input type="number" id="shoeSkirtH" value="1.0" step="0.125" min="0.25" />
+    </div>
+
+    <div class="section-label">Internal Dividers (Grid)</div>
+    <div class="row-3">
+      <div>
+        <label>Cols (Width)</label>
+        <input type="number" id="divCols" value="3" step="1" min="1" max="12" />
+      </div>
+      <div>
+        <label>Rows (Depth)</label>
+        <input type="number" id="divRows" value="2" step="1" min="1" max="12" />
+      </div>
+      <div>
+        <label>Thick (<span class="u">in</span>)</label>
+        <input type="number" id="tDiv" value="0.25" step="0.0625" min="0.04" />
+      </div>
+    </div>
+
+    <div id="dividerDetailOpts" class="sub-box">
+      <label class="check-row">
+        <input type="checkbox" id="divFullH" checked />
+        <span>Match full inner cavity height</span>
+      </label>
+      <div class="row" style="margin-bottom:0;">
+        <div>
+          <label>Custom Height (<span class="u">in</span>)</label>
+          <input type="number" id="divCustomH" value="2.0" step="0.125" min="0.25" disabled />
+        </div>
+        <div>
+          <label>Wall Dado (<span class="u">in</span>)</label>
+          <input type="number" id="divDado" value="0" step="0.0625" min="0" />
+        </div>
+      </div>
+    </div>
+
+    <div id="warnBox" class="warning"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="main-col">
+    <div class="panel">
+      <h2>Dimensions Summary</h2>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="views">
+      <div class="panel">
+        <h2>3D Assembly Preview</h2>
+        <div class="svg-wrap">
+          <svg id="isoSvg" viewBox="0 0 520 400"></svg>
+        </div>
+        <div class="slider-row">
+          <span>Explode / Open Lid:</span>
+          <input type="range" id="explode" min="0" max="1" step="0.02" value="0.35" />
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>2D Part Plans &amp; Joinery Guide</h2>
+        <div class="svg-wrap">
+          <svg id="planSvg" viewBox="0 0 540 380"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Cut List</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Part</th>
+            <th>Qty</th>
+            <th>Length</th>
+            <th>Width / Height</th>
+            <th>Thickness</th>
+            <th>Joinery &amp; Slot Details</th>
+          </tr>
+        </thead>
+        <tbody id="cutListBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { unit: 'in', dimMode: 'outer' };
+const $ = id => document.getElementById(id);
+
+function fmt(val) {
+  const dec = state.unit === 'in' ? 3 : 1;
+  return Number(val.toFixed(dec)) + ' ' + state.unit;
+}
+
+function fmtNum(val) {
+  const dec = state.unit === 'in' ? 3 : 1;
+  return Number(val.toFixed(dec));
+}
+
+document.querySelectorAll('#unitGroup button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const newUnit = btn.dataset.val;
+    if (newUnit === state.unit) return;
+    const factor = newUnit === 'mm' ? 25.4 : 1 / 25.4;
+    ['width','depth','height','tWall','tBottom','tLid','rabbetDepth','grooveDepth',
+     'grooveOffset','lidGrooveDepth','lidRim','lipDepth','shoeSkirtH','tDiv','divCustomH','divDado']
+      .forEach(id => {
+        const el = $(id);
+        el.value = (parseFloat(el.value) * factor).toFixed(newUnit === 'mm' ? 1 : 3);
+        el.step = newUnit === 'mm' ? '1' : '0.0625';
+      });
+    state.unit = newUnit;
+    document.querySelectorAll('#unitGroup button').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.u').forEach(s => s.textContent = newUnit);
+    update();
+  });
+});
+
+document.querySelectorAll('#dimModeGroup button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.dimMode = btn.dataset.val;
+    document.querySelectorAll('#dimModeGroup button').forEach(b => b.classList.toggle('active', b === btn));
+    update();
+  });
+});
+
+document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', update));
+
+function computeBox() {
+  const inW = Math.max(0.1, parseFloat($('width').value) || 0);
+  const inD = Math.max(0.1, parseFloat($('depth').value) || 0);
+  const inH = Math.max(0.1, parseFloat($('height').value) || 0);
+  const tw = Math.max(0.01, parseFloat($('tWall').value) || 0);
+  const tb = Math.max(0.01, parseFloat($('tBottom').value) || 0);
+  const tl = Math.max(0.01, parseFloat($('tLid').value) || 0);
+  const corner = $('cornerJoint').value;
+  const bottomStyle = $('bottomStyle').value;
+  const topStyle = $('topStyle').value;
+
+  $('rabbetOpts').style.display = corner === 'rabbet' ? 'block' : 'none';
+  $('grooveOpts').style.display = bottomStyle === 'groove' ? 'grid' : 'none';
+  $('slidingOpts').style.display = topStyle === 'sliding' ? 'grid' : 'none';
+  $('lippedOpts').style.display = topStyle === 'lipped' ? 'block' : 'none';
+  $('shoeboxOpts').style.display = topStyle === 'shoebox' ? 'block' : 'none';
+  $('tLid').disabled = topStyle === 'open';
+
+  const r = corner === 'rabbet' ? Math.min(tw * 0.9, Math.max(0.01, parseFloat($('rabbetDepth').value) || 0)) : 0;
+  const g = bottomStyle === 'groove' ? Math.min(tw * 0.85, Math.max(0.01, parseFloat($('grooveDepth').value) || 0)) : 0;
+  const s = bottomStyle === 'groove' ? Math.max(0, parseFloat($('grooveOffset').value) || 0) : 0;
+
+  const lg = topStyle === 'sliding' ? Math.min(tw * 0.85, Math.max(0.01, parseFloat($('lidGrooveDepth').value) || 0)) : 0;
+  const lrim = topStyle === 'sliding' ? Math.max(0.01, parseFloat($('lidRim').value) || 0) : 0;
+  const lipD = topStyle === 'lipped' ? Math.min(tl * 0.85, Math.max(0.01, parseFloat($('lipDepth').value) || 0)) : 0;
+  const shoeH = topStyle === 'shoebox' ? Math.max(0.1, parseFloat($('shoeSkirtH').value) || 0) : 0;
+
+  const cols = Math.max(1, Math.round(parseFloat($('divCols').value) || 1));
+  const rows = Math.max(1, Math.round(parseFloat($('divRows').value) || 1));
+  const tDiv = Math.max(0.01, parseFloat($('tDiv').value) || 0);
+  const divFull = $('divFullH').checked;
+  const hasDiv = cols > 1 || rows > 1;
+  $('dividerDetailOpts').style.display = hasDiv ? 'block' : 'none';
+  $('divCustomH').disabled = divFull;
+
+  // Shoebox lid adds 2*tw around base box
+  const wallWrap = topStyle === 'shoebox' ? 4 * tw : 2 * tw;
+  const extraH = (bottomStyle === 'groove' ? s : 0) + tb + (topStyle !== 'open' ? tl : 0) + (topStyle === 'sliding' ? lrim : 0);
+
+  let W, D, H, Win, Din, Hin;
+  if (state.dimMode === 'outer') {
+    W = inW; D = inD; H = inH;
+    Win = W - wallWrap;
+    Din = D - wallWrap;
+    Hin = H - extraH;
+  } else {
+    Win = inW; Din = inD; Hin = inH;
+    W = Win + wallWrap;
+    D = Din + wallWrap;
+    H = Hin + extraH;
+  }
+
+  const Wbase = topStyle === 'shoebox' ? W - 2 * tw : W;
+  const Dbase = topStyle === 'shoebox' ? D - 2 * tw : D;
+
+  // Base wall heights
+  let wallH = H;
+  if (bottomStyle === 'under') wallH -= tb;
+  if (topStyle === 'flat' || topStyle === 'shoebox') wallH -= tl;
+  else if (topStyle === 'lipped') wallH -= (tl - lipD);
+
+  let frontWallH = topStyle === 'sliding' ? (wallH - tl - lrim) : wallH;
+
+  // Base wall lengths
+  const fbLen = Wbase;
+  const lrLen = corner === 'butt' ? Dbase - 2 * tw : (corner === 'miter' ? Dbase : Dbase - 2 * (tw - r));
+
+  // Bottom dimensions
+  const botW = bottomStyle === 'under' ? Wbase : (bottomStyle === 'inside' ? Win : Win + 2 * g);
+  const botD = bottomStyle === 'under' ? Dbase : (bottomStyle === 'inside' ? Din : Din + 2 * g);
+
+  // Lid dimensions
+  let lidW = W, lidD = D, lidSkirtFB = W, lidSkirtLR = 0;
+  if (topStyle === 'inset') { lidW = Win; lidD = Din; }
+  else if (topStyle === 'sliding') { lidW = Win + 2 * lg; lidD = Din + lg + tw; }
+  else if (topStyle === 'shoebox') {
+    lidW = W; lidD = D;
+    lidSkirtFB = W;
+    lidSkirtLR = corner === 'butt' ? D - 2 * tw : (corner === 'miter' ? D : D - 2 * (tw - r));
+  }
+
+  // Dividers
+  const divH = divFull ? Math.max(0.05, Hin) : Math.max(0.05, parseFloat($('divCustomH').value) || 0);
+  const divDado = Math.min(tw * 0.8, Math.max(0, parseFloat($('divDado').value) || 0));
+  const divFBLen = Din + 2 * divDado;
+  const divLRLen = Win + 2 * divDado;
+  const compW = (Win - (cols - 1) * tDiv) / cols;
+  const compD = (Din - (rows - 1) * tDiv) / rows;
+
+  // Warnings
+  let warnings = [];
+  if (Win <= 0 || Din <= 0 || Hin <= 0 || frontWallH <= 0) {
+    warnings.push('Inner cavity or wall height is zero/negative—increase box dimensions or reduce thickness.');
+  }
+  if (corner === 'rabbet' && parseFloat($('rabbetDepth').value) >= tw) warnings.push('Rabbet depth must be less than wall thickness.');
+  if (bottomStyle === 'groove' && parseFloat($('grooveDepth').value) >= tw) warnings.push('Bottom groove depth must be less than wall thickness.');
+  if (topStyle === 'sliding' && parseFloat($('lidGrooveDepth').value) >= tw) warnings.push('Lid groove depth must be less than wall thickness.');
+  if (topStyle === 'lipped' && parseFloat($('lipDepth').value) >= tl) warnings.push('Lip depth must be less than lid thickness.');
+  if (topStyle === 'shoebox' && shoeH >= wallH) warnings.push('Shoebox lid skirt height should be shorter than the base box wall height.');
+  if (hasDiv && (compW <= 0 || compD <= 0)) warnings.push('Too many/thick dividers for the inner cavity size.');
+  if (hasDiv && divH > Hin) warnings.push('Custom divider height exceeds inner cavity height.');
+
+  const wb = $('warnBox');
+  wb.style.display = warnings.length ? 'block' : 'none';
+  wb.innerHTML = warnings.join('<br>');
+
+  return {
+    W, D, H, Wbase, Dbase, Win, Din, Hin, tw, tb, tl, r, g, s, lg, lrim, lipD, shoeH,
+    corner, bottomStyle, topStyle, wallH, frontWallH, fbLen, lrLen, botW, botD,
+    lidW, lidD, lidSkirtFB, lidSkirtLR,
+    cols, rows, tDiv, divH, divDado, divFBLen, divLRLen, compW, compD, hasDiv
+  };
+}
+
+function update() {
+  const b = computeBox();
+
+  const vol = Math.max(0, b.Win * b.Din * b.Hin);
+  const volLabel = state.unit === 'in' ? `${vol.toFixed(1)} in³` : `${(vol / 1000).toFixed(2)} L`;
+
+  let extraStat = '';
+  if (b.hasDiv) {
+    extraStat = `<div class="stat"><small>Compartment Size (${b.cols}×${b.rows})</small><strong>${fmtNum(Math.max(0,b.compW))} × ${fmtNum(Math.max(0,b.compD))} × ${fmtNum(Math.max(0,b.divH))} ${state.unit}</strong></div>`;
+  } else if (b.topStyle === 'shoebox') {
+    extraStat = `<div class="stat"><small>Base Box Outer (W × D)</small><strong>${fmtNum(b.Wbase)} × ${fmtNum(b.Dbase)} ${state.unit}</strong></div>`;
+  }
+
+  $('summaryGrid').innerHTML = `
+    <div class="stat"><small>Overall Outer (W × D × H)</small><strong>${fmtNum(b.W)} × ${fmtNum(b.D)} × ${fmtNum(b.H)} ${state.unit}</strong></div>
+    <div class="stat"><small>Inner Cavity (W × D × H)</small><strong>${fmtNum(Math.max(0,b.Win))} × ${fmtNum(Math.max(0,b.Din))} × ${fmtNum(Math.max(0,b.Hin))} ${state.unit}</strong></div>
+    <div class="stat"><small>Total Cavity Volume</small><strong>${volLabel}</strong></div>
+    ${extraStat}
+  `;
+
+  // Cut list notes
+  const cFB = b.corner === 'miter' ? '45° miter both ends'
+    : (b.corner === 'rabbet' ? `${fmt(b.r)} deep × ${fmt(b.tw)} wide end rabbets` : 'Square ends');
+  const cLR = b.corner === 'miter' ? '45° miter both ends'
+    : (b.corner === 'rabbet' ? 'Fits into Front/Back rabbets' : 'Fits between Front/Back');
+  const botGroove = b.bottomStyle === 'groove' ? `; bottom groove ${fmt(b.tb)}W × ${fmt(b.g)}D at ${fmt(b.s)} up` : '';
+  const lidGroove = b.topStyle === 'sliding' ? `; lid groove ${fmt(b.tl)}W × ${fmt(b.lg)}D at ${fmt(b.lrim)} from top` : '';
+  const divWallNote = (b.hasDiv && b.divDado > 0) ? `; ${fmt(b.tDiv)}W × ${fmt(b.divDado)}D vertical dadoes for dividers` : '';
+
+  const parts = [];
+  if (b.topStyle === 'sliding') {
+    parts.push({ name: 'Back Wall', qty: 1, l: b.fbLen, w: b.wallH, t: b.tw, note: cFB + botGroove + lidGroove + divWallNote, type: 'wallFB' });
+    parts.push({ name: 'Front Wall (Pull-out End)', qty: 1, l: b.fbLen, w: b.frontWallH, t: b.tw, note: cFB + botGroove + `; trimmed ${fmt(b.tl + b.lrim)} shorter for sliding lid`, type: 'wallFront' });
+  } else {
+    parts.push({ name: 'Front & Back Walls', qty: 2, l: b.fbLen, w: b.wallH, t: b.tw, note: cFB + botGroove + divWallNote, type: 'wallFB' });
+  }
+  parts.push({ name: 'Left & Right Walls', qty: 2, l: b.lrLen, w: b.wallH, t: b.tw, note: cLR + botGroove + lidGroove + divWallNote, type: 'wallLR' });
+
+  parts.push({
+    name: 'Bottom Panel', qty: 1, l: b.botW, w: b.botD, t: b.tb,
+    note: b.bottomStyle === 'under' ? 'Sits under walls' : (b.bottomStyle === 'inside' ? 'Flush inside walls' : 'Captive in wall grooves'),
+    type: 'bottom'
+  });
+
+  if (b.topStyle === 'flat') {
+    parts.push({ name: 'Flat Lid', qty: 1, l: b.lidW, w: b.lidD, t: b.tl, note: 'Sits flush on top of walls', type: 'lid' });
+  } else if (b.topStyle === 'inset') {
+    parts.push({ name: 'Inset Lid', qty: 1, l: b.lidW, w: b.lidD, t: b.tl, note: 'Fits flush inside top (allow ~1/32" / 0.5mm play)', type: 'lid' });
+  } else if (b.topStyle === 'sliding') {
+    parts.push({ name: 'Sliding Lid', qty: 1, l: b.lidW, w: b.lidD, t: b.tl, note: 'Slides into Left/Right/Back grooves (allow ~1/32" / 0.5mm play)', type: 'lid' });
+  } else if (b.topStyle === 'lipped') {
+    parts.push({
+      name: 'Rabbeted Lip Lid', qty: 1, l: b.lidW, w: b.lidD, t: b.tl,
+      note: `Cut ${fmt(b.tw)} wide × ${fmt(b.lipD)} deep rabbet around all 4 bottom edges (leaves ${fmt(b.Win)} × ${fmt(b.Din)} plug)`,
+      type: 'lidLipped'
+    });
+  } else if (b.topStyle === 'shoebox') {
+    parts.push({ name: 'Shoebox Lid Top', qty: 1, l: b.lidW, w: b.lidD, t: b.tl, note: 'Sits on top of lid skirt walls (allow ~1/32" / 0.5mm fit play around base)', type: 'lid' });
+    parts.push({ name: 'Lid Skirt (Front & Back)', qty: 2, l: b.lidSkirtFB, w: b.shoeH, t: b.tw, note: cFB, type: 'skirt' });
+    parts.push({ name: 'Lid Skirt (Left & Right)', qty: 2, l: b.lidSkirtLR, w: b.shoeH, t: b.tw, note: cLR, type: 'skirt' });
+  }
+
+  // Dividers
+  const fbSlots = [];
+  for (let r = 1; r < b.rows; r++) fbSlots.push(b.divDado + r * b.compD + (r - 0.5) * b.tDiv);
+  const lrSlots = [];
+  for (let c = 1; c < b.cols; c++) lrSlots.push(b.divDado + c * b.compW + (c - 0.5) * b.tDiv);
+
+  if (b.cols > 1) {
+    const slotText = b.rows > 1
+      ? `Cut ${b.rows - 1} top half-lap slot(s) (${fmt(b.tDiv)}W × ${fmt(b.divH / 2)}D) centered at: ${fbSlots.map(v => fmt(v)).join(', ')}`
+      : 'No cross slots needed';
+    parts.push({
+      name: 'Dividers (Front-to-Back)', qty: b.cols - 1, l: b.divFBLen, w: b.divH, t: b.tDiv,
+      note: slotText + (b.divDado > 0 ? `; includes ${fmt(b.divDado)} wall dado each end` : ''),
+      type: 'divFB', slots: fbSlots
+    });
+  }
+  if (b.rows > 1) {
+    const slotText = b.cols > 1
+      ? `Cut ${b.cols - 1} bottom half-lap slot(s) (${fmt(b.tDiv)}W × ${fmt(b.divH / 2)}D) centered at: ${lrSlots.map(v => fmt(v)).join(', ')}`
+      : 'No cross slots needed';
+    parts.push({
+      name: 'Dividers (Left-to-Right)', qty: b.rows - 1, l: b.divLRLen, w: b.divH, t: b.tDiv,
+      note: slotText + (b.divDado > 0 ? `; includes ${fmt(b.divDado)} wall dado each end` : ''),
+      type: 'divLR', slots: lrSlots
+    });
+  }
+
+  $('cutListBody').innerHTML = parts.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.qty}</td>
+      <td>${fmt(Math.max(0, p.l))}</td>
+      <td>${fmt(Math.max(0, p.w))}</td>
+      <td>${fmt(p.t)}</td>
+      <td>${p.note}</td>
+    </tr>
+  `).join('');
+
+  renderIso(b);
+  renderPlans(b, parts);
+}
+
+function renderIso(b) {
+  const svg = $('isoSvg');
+  const rawExp = parseFloat($('explode').value);
+  const exp = rawExp * Math.max(b.W, b.D, b.H) * 0.42;
+  const xOffBase = b.topStyle === 'shoebox' ? b.tw : 0;
+  const yOffBase = b.topStyle === 'shoebox' ? b.tw : 0;
+  const zBase = b.bottomStyle === 'under' ? b.tb : 0;
+  const zInBottom = (b.bottomStyle === 'groove' ? b.s : 0) + b.tb;
+
+  const lrY0 = yOffBase + (b.corner === 'butt' ? b.tw : (b.corner === 'rabbet' ? b.tw - b.r : 0));
+  const botX0 = xOffBase + (b.bottomStyle === 'under' ? 0 : (b.bottomStyle === 'inside' ? b.tw : b.tw - b.g));
+  const botY0 = yOffBase + (b.bottomStyle === 'under' ? 0 : (b.bottomStyle === 'inside' ? b.tw : b.tw - b.g));
+  const botZ0 = b.bottomStyle === 'groove' ? b.s : 0;
+
+  const boxes = [];
+  const addBox = (x, y, z, dx, dy, dz, c) => boxes.push({ x, y, z, dx, dy, dz, c });
+
+  // Build ordered list for mathematically clean painter's algorithm
+  if (b.bottomStyle === 'under') {
+    addBox(botX0, botY0, botZ0 - exp, b.botW, b.botD, b.tb, ['#d9b686','#c29b66','#a37c47']);
+  }
+  // Back & Left
+  addBox(xOffBase, yOffBase - exp, zBase, b.Wbase, b.tw, b.wallH, ['#e6c79c','#d4ae7a','#b88e58']);
+  addBox(xOffBase - exp, lrY0, zBase, b.tw, b.lrLen, b.wallH, ['#e0be90','#cca36d','#ad834d']);
+
+  if (b.bottomStyle !== 'under') {
+    addBox(botX0, botY0, botZ0 - exp, b.botW, b.botD, b.tb, ['#d9b686','#c29b66','#a37c47']);
+  }
+
+  // Dividers (drawn column by column for zero-overlap painter's order)
+  if (b.hasDiv) {
+    const zDiv = zInBottom + exp * 0.35;
+    const xStart = xOffBase + b.tw - b.divDado;
+    const yStart = yOffBase + b.tw - b.divDado;
+    const xIn0 = xOffBase + b.tw;
+    const yIn0 = yOffBase + b.tw;
+    const cDiv = ['#f2dec0','#dec096','#c4a274'];
+
+    for (let c = 0; c < b.cols; c++) {
+      const segX0 = c === 0 ? xStart : xIn0 + c * b.compW + c * b.tDiv;
+      const segX1 = c === b.cols - 1 ? (xIn0 + b.Win + b.divDado) : (xIn0 + (c + 1) * b.compW + c * b.tDiv);
+      // Draw L-to-R segments in column c in increasing y order
+      for (let r = 1; r < b.rows; r++) {
+        const divY = yIn0 + r * b.compD + (r - 1) * b.tDiv;
+        addBox(segX0, divY, zDiv, segX1 - segX0, b.tDiv, b.divH, cDiv);
+      }
+      // Draw F-to-B divider at boundary c
+      if (c < b.cols - 1) {
+        const divX = xIn0 + (c + 1) * b.compW + c * b.tDiv;
+        addBox(divX, yStart, zDiv, b.tDiv, b.divFBLen, b.divH, cDiv);
+      }
+    }
+  }
+
+  const lidLift = exp * 1.35;
+  const cLid = ['#edd2aa','#dab582','#bd935c'];
+
+  // Inset & Lipped lower plug sit inside before Front/Right if closed
+  if (b.topStyle === 'inset') {
+    addBox(xOffBase + b.tw, yOffBase + b.tw, zBase + b.wallH - b.tl + lidLift, b.lidW, b.lidD, b.tl, cLid);
+  }
+
+  // Front wall
+  addBox(xOffBase, yOffBase + b.Dbase - b.tw + exp, zBase, b.Wbase, b.tw, b.frontWallH, ['#e6c79c','#d4ae7a','#b88e58']);
+
+  // Sliding lid slides out front (+Y)
+  if (b.topStyle === 'sliding') {
+    addBox(xOffBase + b.tw - b.lg, yOffBase + b.tw - b.lg + exp * 1.5, zBase + b.frontWallH, b.lidW, b.lidD, b.tl, cLid);
+  }
+
+  // Right wall
+  addBox(xOffBase + b.Wbase - b.tw + exp, lrY0, zBase, b.tw, b.lrLen, b.wallH, ['#e0be90','#cca36d','#ad834d']);
+
+  // Top lids above Front & Right
+  if (b.topStyle === 'flat') {
+    addBox(xOffBase, yOffBase, zBase + b.wallH + lidLift, b.lidW, b.lidD, b.tl, cLid);
+  } else if (b.topStyle === 'lipped') {
+    addBox(xOffBase + b.tw, yOffBase + b.tw, zBase + b.wallH - b.lipD + lidLift, b.Win, b.Din, b.lipD, ['#dfc095','#cca570','#af864f']);
+    addBox(xOffBase, yOffBase, zBase + b.wallH + lidLift, b.lidW, b.lidD, b.tl - b.lipD, cLid);
+  } else if (b.topStyle === 'shoebox') {
+    const sz = zBase + b.wallH - b.shoeH + lidLift;
+    const slrY0 = b.corner === 'butt' ? b.tw : (b.corner === 'rabbet' ? b.tw - b.r : 0);
+    addBox(0, 0, sz, b.W, b.tw, b.shoeH, ['#e8cba0','#d6b07c','#ba905a']);
+    addBox(0, slrY0, sz, b.tw, b.lidSkirtLR, b.shoeH, ['#e2c294','#cfa670','#b0864f']);
+    addBox(0, b.D - b.tw, sz, b.W, b.tw, b.shoeH, ['#e8cba0','#d6b07c','#ba905a']);
+    addBox(b.W - b.tw, slrY0, sz, b.tw, b.lidSkirtLR, b.shoeH, ['#e2c294','#cfa670','#b0864f']);
+    addBox(0, 0, zBase + b.wallH + lidLift, b.W, b.D, b.tl, cLid);
+  }
+
+  const proj = (x, y, z) => [(x - y) * 0.866, (x + y) * 0.5 - z];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  boxes.forEach(p => {
+    for (let xi of [p.x, p.x + p.dx])
+      for (let yi of [p.y, p.y + p.dy])
+        for (let zi of [p.z, p.z + p.dz]) {
+          const [sx, sy] = proj(xi, yi, zi);
+          minX = Math.min(minX, sx); maxX = Math.max(maxX, sx);
+          minY = Math.min(minY, sy); maxY = Math.max(maxY, sy);
+        }
+  });
+
+  const scale = Math.min(440 / (maxX - minX || 1), 330 / (maxY - minY || 1));
+  const ox = 260 - ((minX + maxX) / 2) * scale;
+  const oy = 200 - ((minY + maxY) / 2) * scale;
+  const pt = (x, y, z) => {
+    const [sx, sy] = proj(x, y, z);
+    return `${(ox + sx * scale).toFixed(1)},${(oy + sy * scale).toFixed(1)}`;
+  };
+
+  svg.innerHTML = boxes.map(p => {
+    const x0 = p.x, x1 = p.x + p.dx, y0 = p.y, y1 = p.y + p.dy, z0 = p.z, z1 = p.z + p.dz;
+    const top = [pt(x0,y0,z1), pt(x1,y0,z1), pt(x1,y1,z1), pt(x0,y1,z1)].join(' ');
+    const front = [pt(x0,y1,z0), pt(x1,y1,z0), pt(x1,y1,z1), pt(x0,y1,z1)].join(' ');
+    const right = [pt(x1,y0,z0), pt(x1,y1,z0), pt(x1,y1,z1), pt(x1,y0,z1)].join(' ');
+    return `<g stroke="#5a3e22" stroke-width="0.9" stroke-linejoin="round">
+      <polygon points="${front}" fill="${p.c[1]}" />
+      <polygon points="${right}" fill="${p.c[2]}" />
+      <polygon points="${top}" fill="${p.c[0]}" />
+    </g>`;
+  }).join('');
+}
+
+function renderPlans(b, parts) {
+  const svg = $('planSvg');
+  const cols = 2, cellW = 260, cellH = 165, pad = 10;
+  const totalRows = Math.ceil(parts.length / cols);
+  const svgH = Math.max(360, totalRows * cellH + 20);
+  svg.setAttribute('viewBox', `0 0 540 ${svgH}`);
+
+  let html = '';
+  parts.forEach((p, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const cx = pad + col * cellW + cellW / 2;
+    const cy = 12 + row * cellH + cellH / 2;
+    const pw = Math.max(0.01, p.l), ph = Math.max(0.01, p.w);
+    const sc = Math.min(185 / pw, 98 / ph);
+    const rw = pw * sc, rh = ph * sc;
+    const rx = cx - rw / 2, ry = cy - rh / 2;
+
+    html += `<g>`;
+    html += `<text x="${cx}" y="${ry - 10}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#24211d">${p.name} (×${p.qty})</text>`;
+    html += `<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="#ead4b2" stroke="#5a3e22" stroke-width="1.2"/>`;
+
+    // Wall joinery lines
+    if (p.type === 'wallFB' || p.type === 'wallFront' || p.type === 'wallLR' || p.type === 'skirt') {
+      if (b.bottomStyle === 'groove' && p.type !== 'skirt') {
+        const gy = ry + rh - (b.s + b.tb) * sc;
+        html += `<rect x="${rx}" y="${gy}" width="${rw}" height="${b.tb * sc}" fill="rgba(90,62,34,0.2)" stroke="#5a3e22" stroke-dasharray="3,2" stroke-width="0.8"/>`;
+      }
+      if (b.topStyle === 'sliding' && (p.type === 'wallFB' || p.type === 'wallLR')) {
+        const lgy = ry + b.lrim * sc;
+        html += `<rect x="${rx}" y="${lgy}" width="${rw}" height="${b.tl * sc}" fill="rgba(90,62,34,0.2)" stroke="#5a3e22" stroke-dasharray="3,2" stroke-width="0.8"/>`;
+      }
+      if (b.corner === 'rabbet' && (p.type === 'wallFB' || p.type === 'wallFront')) {
+        const rbw = b.tw * sc;
+        html += `<rect x="${rx}" y="${ry}" width="${rbw}" height="${rh}" fill="rgba(90,62,34,0.16)" stroke="#5a3e22" stroke-dasharray="3,2" stroke-width="0.8"/>`;
+        html += `<rect x="${rx + rw - rbw}" y="${ry}" width="${rbw}" height="${rh}" fill="rgba(90,62,34,0.16)" stroke="#5a3e22" stroke-dasharray="3,2" stroke-width="0.8"/>`;
+      }
+      if (b.corner === 'miter') {
+        const mOff = Math.min(rw * 0.22, b.tw * sc);
+        html += `<line x1="${rx + mOff}" y1="${ry}" x2="${rx + mOff}" y2="${ry + rh}" stroke="#5a3e22" stroke-dasharray="4,2" stroke-width="0.9"/>`;
+        html += `<line x1="${rx + rw - mOff}" y1="${ry}" x2="${rx + rw - mOff}" y2="${ry + rh}" stroke="#5a3e22" stroke-dasharray="4,2" stroke-width="0.9"/>`;
+      }
+    }
+
+    // Lipped lid underside rabbet guide
+    if (p.type === 'lidLipped') {
+      const m = b.tw * sc;
+      html += `<rect x="${rx + m}" y="${ry + m}" width="${Math.max(1, rw - 2 * m)}" height="${Math.max(1, rh - 2 * m)}" fill="none" stroke="#5a3e22" stroke-dasharray="3,2" stroke-width="0.9"/>`;
+    }
+
+    // Divider half-lap notches
+    if ((p.type === 'divFB' || p.type === 'divLR') && p.slots && p.slots.length && b.cols > 1 && b.rows > 1) {
+      const sw = b.tDiv * sc;
+      const sh = rh / 2;
+      p.slots.forEach(pos => {
+        const sx = rx + pos * sc - sw / 2;
+        const sy = p.type === 'divFB' ? ry : (ry + rh - sh);
+        html += `<rect x="${sx}" y="${sy}" width="${Math.max(1.5, sw)}" height="${sh}" fill="#fcfbf8" stroke="#5a3e22" stroke-width="0.9"/>`;
+      });
+    }
+
+    html += `<text x="${cx}" y="${ry + rh + 13}" text-anchor="middle" font-size="9.8" fill="#6c655c">${fmtNum(p.l)} × ${fmtNum(p.w)} × ${fmtNum(p.t)} ${state.unit}</text>`;
+    html += `</g>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+update();
+</script>
+</body>
+</html>
