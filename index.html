@@ -226,6 +226,23 @@
   <div class="panel controls-panel">
     <h2>Box Specifications</h2>
 
+    <div class="section-label"><label for="boxPreset">Starting Template</label></div>
+    <select id="boxPreset">
+      <option value="">Choose a box type…</option>
+      <option value="0">Shoe Box · Overlapping lid</option>
+      <option value="1">Pencil Box · Sliding lid</option>
+      <option value="2">Tea Chest · 6 compartments</option>
+      <option value="3">Jewelry Box · 6 compartments</option>
+      <option value="4">Recipe Card Box · Fits 4 × 6 cards</option>
+      <option value="5">Keepsake Chest · Lift-off lid</option>
+      <option value="6">Domino Box · Sliding lid</option>
+      <option value="7">Dice Vault · 3 compartments</option>
+      <option value="8">Treasure Tray · Open top · 4 compartments</option>
+      <option value="9">Seed Packet Box · 3 compartments</option>
+      <option value="10">Watch Box · 4 compartments</option>
+      <option value="11">Shop Hardware Sorter · 12 compartments</option>
+    </select>
+
     <div class="section-label">Units &amp; Reference</div>
     <div class="toggle-group" id="unitGroup">
       <button class="active" data-val="in">Inches (in)</button>
@@ -459,7 +476,52 @@ document.querySelectorAll('#dimModeGroup button').forEach(btn => {
   });
 });
 
-document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', update));
+// Starter sizes specify the usable inside dimensions in inches.
+const boxPresets = [
+  { size: [13, 8, 5], topStyle: 'shoebox', divCols: 1, divRows: 1, shoeSkirtH: 1.25 },
+  { size: [8.5, 2.5, 1.25], topStyle: 'sliding', divCols: 1, divRows: 1 },
+  { size: [9, 6, 3], topStyle: 'flat', divCols: 3, divRows: 2 },
+  { size: [9, 6, 1.75], topStyle: 'lipped', divCols: 3, divRows: 2, cornerJoint: 'miter', divFullH: false, divCustomH: 1 },
+  { size: [6.5, 4, 4.5], topStyle: 'flat', divCols: 1, divRows: 1, bottomStyle: 'under' },
+  { size: [12, 8, 5], topStyle: 'lipped', divCols: 1, divRows: 1, cornerJoint: 'rabbet' },
+  { size: [8, 3, 2], topStyle: 'sliding', divCols: 1, divRows: 1 },
+  { size: [7.5, 2.5, 1.5], topStyle: 'inset', divCols: 3, divRows: 1, cornerJoint: 'miter' },
+  { size: [8, 8, 2], topStyle: 'open', divCols: 2, divRows: 2 },
+  { size: [7.5, 5, 5], topStyle: 'flat', divCols: 1, divRows: 3, divFullH: false, divCustomH: 3 },
+  { size: [10, 4, 2.5], topStyle: 'flat', divCols: 4, divRows: 1, cornerJoint: 'miter' },
+  { size: [12, 8, 2], topStyle: 'open', divCols: 4, divRows: 3, bottomStyle: 'under', divDado: 0.125 },
+];
+
+$('boxPreset').addEventListener('change', event => {
+  if (event.target.value === '') return;
+
+  const { size: [width, depth, height], ...options } = boxPresets[Number(event.target.value)];
+  const factor = state.unit === 'mm' ? 25.4 : 1;
+  const measurements = {
+    width, depth, height, tWall: 0.5, tBottom: 0.25, tLid: 0.25,
+    rabbetDepth: 0.25, grooveDepth: 0.25, grooveOffset: 0.25,
+    lidGrooveDepth: 0.25, lidRim: 0.25, lipDepth: 0.125,
+    shoeSkirtH: 1, tDiv: 0.25, divCustomH: 1, divDado: 0
+  };
+  const settings = { cornerJoint: 'butt', bottomStyle: 'groove', divFullH: true, ...options };
+
+  for (const [id, defaultValue] of Object.entries(measurements)) {
+    const value = settings[id] ?? defaultValue;
+    $(id).value = Number((value * factor).toFixed(4));
+  }
+  for (const [id, value] of Object.entries(settings)) {
+    if (id in measurements) continue;
+    if (id === 'divFullH') $(id).checked = value;
+    else $(id).value = value;
+  }
+
+  document.querySelector('#dimModeGroup button[data-val="inner"]').click();
+
+  // Return to the prompt so the same template can be loaded again.
+  event.target.value = '';
+});
+
+document.querySelectorAll('input, select:not(#boxPreset)').forEach(el => el.addEventListener('input', update));
 
 function computeBox() {
   const inW = Math.max(0.1, parseFloat($('width').value) || 0);
